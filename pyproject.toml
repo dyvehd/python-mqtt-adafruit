@@ -8,3 +8,8 @@ dependencies = [
     "adafruit-io>=3.0.0",
     "dotenv>=0.9.9",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
