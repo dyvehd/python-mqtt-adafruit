@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "adafruit-io>=3.0.0",
     "dotenv>=0.9.9",
+    "pyserial>=3.5",
 ]
 
 [dependency-groups]

@@ -26,6 +26,10 @@ PUBLISH_INTERVAL_SEC = 5
 WARNING_TEMP_THRESHOLD = 40.0
 ALARM_TEMP_THRESHOLD = 55.0
 
+SERIAL_BAUDRATE = 115200
+SERIAL_TIMEOUT_SEC = 2.0
+SERIAL_RECONNECT_DELAY_SEC = 3.0
+
 
 def load_credentials(env_path: str = ".env") -> tuple[str, str]:
     username = dotenv.get_key(env_path, "AIO_USERNAME")

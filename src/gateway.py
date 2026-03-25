@@ -54,7 +54,16 @@ class Gateway:
             time.sleep(self._publish_interval)
 
     def publish_cycle(self) -> None:
-        reading = self._sensor.get_readings()
+        """Run one publish iteration: read providers, evaluate alert, publish."""
+        try:
+            reading = self._sensor.get_readings()
+        except RuntimeError as exc:
+            logger.warning("Sensor unavailable: %s", exc)
+            self._client.publish(FeedKey.SENSOR_DEVICE_STATUS, "offline")
+            return
+
+        self._client.publish(FeedKey.SENSOR_DEVICE_STATUS, "online")
+
         detection = self._ai.get_detection()
         alert_level, alarm_reason = evaluate_alert(reading, detection)
 

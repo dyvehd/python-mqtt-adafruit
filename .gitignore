@@ -14,3 +14,6 @@ _reference
 
 # Environment files
 .env
+
+# Test cache
+.pytest_cache/
