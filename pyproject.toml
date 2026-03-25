@@ -1,0 +1,10 @@
+[project]
+name = "python-mqtt-adafruit"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "adafruit-io>=3.0.0",
+    "dotenv>=0.9.9",
+]
