@@ -46,9 +46,6 @@ def main() -> None:
     else:
         sensor_provider = MockSensorProvider()
 
-    username, key = load_credentials()
-    client = MQTTClient(username, key)
-
     if args.camera_id.lower() == "mock":
         ai_provider = MockAIProvider()
     else:
