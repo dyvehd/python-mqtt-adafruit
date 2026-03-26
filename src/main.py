@@ -67,7 +67,7 @@ def main() -> None:
     gateway = Gateway(
         mqtt_client=client,
         sensor_provider=sensor_provider,
-        ai_provider=MockAIProvider(),
+        ai_provider=ai_provider,
     )
     gateway.start()
 
