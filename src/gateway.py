@@ -44,6 +44,26 @@ class Gateway:
     def _on_message(self, client, feed_key: str, payload: str) -> None:
         logger.info("Received message on %s: %s", feed_key, payload)
 
+        # Create an empty dictionary to hold the command
+        command_data = {}
+
+        # Check which channel the message came from
+        if feed_key == FeedKey.CMD_FAN_PUMP:
+            if payload == "1":
+                command_data = {"device": "FAN_PUMP", "status": "ON"}
+            elif payload == "0":
+                command_data = {"device": "FAN_PUMP", "status": "OFF"}
+
+        elif feed_key == FeedKey.CMD_TEST_RUN:
+            if payload == "1":
+                command_data = {"device": "SYSTEM", "cmd": "TEST_ALARM"}
+
+        if command_data:
+            if hasattr(self._sensor, "send_command"):
+                self._sensor.send_command(command_data)
+        else:
+            logger.debug("No action has been assigned to this command.")
+
     def start(self) -> None:
         self._client.connect()
         self._client.loop_background()
