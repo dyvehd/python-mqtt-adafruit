@@ -21,10 +21,13 @@ SUBSCRIBE_FEEDS = [
     FeedKey.CMD_TEST_RUN,
 ]
 
-PUBLISH_INTERVAL_SEC = 5
+PUBLISH_INTERVAL_SEC = 10
 
 WARNING_TEMP_THRESHOLD = 40.0
 ALARM_TEMP_THRESHOLD = 55.0
+
+AI_TARGET_FPS = 150
+AI_CONFIDENCE_THRESHOLD = 0.5
 
 SERIAL_BAUDRATE = 115200
 SERIAL_TIMEOUT_SEC = 2.0
@@ -35,7 +38,5 @@ def load_credentials(env_path: str = ".env") -> tuple[str, str]:
     username = dotenv.get_key(env_path, "AIO_USERNAME")
     key = dotenv.get_key(env_path, "AIO_KEY")
     if not username or not key:
-        raise ValueError(
-            "AIO_USERNAME and AIO_KEY must be set in the .env file"
-        )
+        raise ValueError("AIO_USERNAME and AIO_KEY must be set in the .env file")
     return username, key

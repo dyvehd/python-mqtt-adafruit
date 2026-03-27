@@ -28,7 +28,6 @@ Yolo:Bit + DHT20 + LCD + Fan + Pump + RGB LED
 
 ## Adafruit IO Feed Mapping
 
-
 | Feed Name                    | MQTT Key                                    | Description                                         | Direction        |
 | ---------------------------- | ------------------------------------------- | --------------------------------------------------- | ---------------- |
 | `sensor/results`             | `sfs-mqtt.sensor-slash-results`             | Temperature and humidity readings                   | Gateway -> Cloud |
@@ -39,7 +38,6 @@ Yolo:Bit + DHT20 + LCD + Fan + Pump + RGB LED
 | `cmd/system`                 | `sfs-mqtt.cmd-slash-system`                 | Master switch (`on`/`off`)                          | Cloud -> Gateway |
 | `cmd/fan-pump`               | `sfs-mqtt.cmd-slash-fan-pump`               | Fan/pump control (`on`/`off`/`auto`)                | Cloud -> Gateway |
 | `cmd/test-run`               | `sfs-mqtt.cmd-slash-test-run`               | Fire drill trigger (`on`/`off`)                     | Cloud -> Gateway |
-
 
 ## Project Structure
 
@@ -67,7 +65,7 @@ uv.lock                Lockfile for reproducible installs
 - Temperature > 40 C --> `WARNING` (early warning, fan on)
 - Temperature > 55 C or fire detected by AI --> `ALARM` (siren, pump, red lights)
 
-`gateway.py**` ties everything together. Each publish cycle it reads from the sensor and AI providers, evaluates the alert level, and publishes all results to Adafruit IO. It also subscribes to command feeds and publishes device status (online/offline) based on sensor availability.
+`gateway.py` ties everything together. Each publish cycle it reads from the sensor and AI providers, evaluates the alert level, and publishes all results to Adafruit IO. It also subscribes to command feeds and publishes device status (online/offline) based on sensor availability.
 
 ## Prerequisites
 
@@ -115,16 +113,13 @@ The gateway will connect to Adafruit IO, subscribe to command feeds, and begin p
 
 ## Progress
 
-
-| Task                                                       | Status                                         |
-| ---------------------------------------------------------- | ---------------------------------------------- |
-| MQTT communication with Adafruit IO                        | Done                                           |
-| Modular gateway architecture (provider protocols)          | Done                                           |
-| Multi-level alert evaluation                               | Done (needs better series analysis)            |
-| Serial sensor reading from Yolo:Bit                        | Done (needs to be tested against real devices) |
-| Mock providers for development without hardware            | Done                                           |
-| Integrate YOLO model for AI fire/smoke detection           | Not started                                    |
-| Forward control commands to microcontroller (serial write) | Not started                                    |
-| Persistent event logging                                   | Not started                                    |
-
-
+| Task                                                       | Status                              |
+| ---------------------------------------------------------- | ----------------------------------- |
+| MQTT communication with Adafruit IO                        | Done                                |
+| Modular gateway architecture (provider protocols)          | Done                                |
+| Multi-level alert evaluation                               | Done (needs better series analysis) |
+| Serial sensor reading from Yolo:Bit                        | Done                                |
+| Mock providers for development without hardware            | Done                                |
+| Integrate YOLO model for AI fire/smoke detection           | Done                                |
+| Forward control commands to microcontroller (serial write) | Not started                         |
+| Persistent event logging                                   | Not started                         |
