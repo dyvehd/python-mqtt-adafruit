@@ -33,8 +33,7 @@ Yolo:Bit + DHT20 + LCD + Fan + Pump + RGB LED
 | `sensor/results`             | `sfs-mqtt.sensor-slash-results`             | Temperature and humidity readings                   | Gateway -> Cloud |
 | `sensor/device-status`       | `sfs-mqtt.sensor-slash-device-status`       | Online/offline health check for the microcontroller | Gateway -> Cloud |
 | `ai/results`                 | `sfs-mqtt.ai-slash-results`                 | YOLO fire/smoke detection with confidence scores    | Gateway -> Cloud |
-| `event/alert-level`          | `sfs-mqtt.event-slash-alert-level`          | `NORMAL`, `WARNING`, or `ALARM`                     | Gateway -> Cloud |
-| `event/alarm-trigger-reason` | `sfs-mqtt.event-slash-alarm-trigger-reason` | `NONE`, `HIGH_TEMP`, `FIRE`, or `TEST`              | Gateway -> Cloud |
+| `event/alert-level-alarm-reason` | `sfs-mqtt.event-slash-alert-level-alarm-reason` | Combined `LEVEL:REASON` (e.g. `ALARM:FIRE`)     | Gateway -> Cloud |
 | `cmd/system`                 | `sfs-mqtt.cmd-slash-system`                 | Master switch (`on`/`off`)                          | Cloud -> Gateway |
 | `cmd/fan-pump`               | `sfs-mqtt.cmd-slash-fan-pump`               | Fan/pump control (`on`/`off`/`auto`)                | Cloud -> Gateway |
 | `cmd/test-run`               | `sfs-mqtt.cmd-slash-test-run`               | Fire drill trigger (`on`/`off`)                     | Cloud -> Gateway |

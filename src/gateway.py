@@ -69,8 +69,9 @@ class Gateway:
 
         self._client.publish(FeedKey.SENSOR_RESULTS, str(reading))
         self._client.publish(FeedKey.AI_RESULTS, str(detection))
-        self._client.publish(FeedKey.EVENT_ALERT_LEVEL, str(alert_level))
-        self._client.publish(FeedKey.EVENT_ALARM_REASON, str(alarm_reason))
+        self._client.publish(
+            FeedKey.EVENT_ALERT, f"{alert_level}:{alarm_reason}"
+        )
 
         logger.info(
             "Published | %s | %s | alert=%s reason=%s",
