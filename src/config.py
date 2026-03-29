@@ -36,6 +36,6 @@ def load_credentials(env_path: str = ".env") -> tuple[str, str]:
     key = dotenv.get_key(env_path, "AIO_KEY")
     if not username or not key:
         raise ValueError(
-            "AIO_USERNAME and AIO_KEY must be set in the log.env file"
+            "AIO_USERNAME and AIO_KEY must be set in the .env file"
         )
     return username, key
