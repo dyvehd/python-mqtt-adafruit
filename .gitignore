@@ -13,7 +13,7 @@ wheels/
 _reference
 
 # Environment files
-.env
+log.env
 
 # Test cache
 .pytest_cache/

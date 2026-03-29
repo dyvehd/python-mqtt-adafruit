@@ -31,6 +31,7 @@ class AIDetection:
 class SensorProvider(Protocol):
     def get_readings(self) -> SensorReading: ...
 
+    def send_command(self, command_data: dict) -> None: ...
 
 class AIProvider(Protocol):
     def get_detection(self) -> AIDetection: ...
@@ -47,6 +48,9 @@ class MockSensorProvider:
         self._base_humidity = base_humidity
         self._step = step
         self._tick = 0
+
+    def send_command(self, command_data: dict) -> None:
+        print(f"[MOCK SENSOR] Order received to send: {command_data}")
 
     def get_readings(self) -> SensorReading:
         offset = self._tick * self._step

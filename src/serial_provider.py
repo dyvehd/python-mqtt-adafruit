@@ -76,43 +76,46 @@ class SerialSensorProvider:
                 )
             return self._latest
 
+    def send_command(self, command_data: dict) -> None:
+        if self._ser and self._ser.is_open:
+            try:
+                # Chuyển từ Dictionary (Python) sang chuỗi JSON và thêm ký tự xuống dòng (\n)
+                # Mạch Yolo:Bit cần lập trình để đọc từng dòng kết thúc bằng \n
+                cmd_str = json.dumps(command_data) + "\n"
+
+                self._ser.write(cmd_str.encode("utf-8"))
+                logger.info("The order has been sent to Yolo:Bit: %s", cmd_str.strip())
+            except Exception as e:
+                logger.error("Error sending command to Serial port: %s", e)
+        else:
+            logger.warning("The serial port is not open, commands cannot be sent!")
+
     def _reader_loop(self) -> None:
         """Continuously read lines from the serial port, reconnecting on failure."""
         while True:
             try:
-                logger.info(
-                    "Opening serial port %s @ %d baud",
-                    self._port,
-                    self._baudrate,
-                )
-                with serial.Serial(
-                    self._port,
-                    self._baudrate,
-                    timeout=self._timeout,
-                ) as ser:
-                    logger.info("Serial port %s opened", self._port)
-                    while True:
-                        raw_bytes = ser.readline()
-                        if not raw_bytes:
-                            continue
-                        raw = raw_bytes.decode("utf-8", errors="replace")
-                        reading = parse_line(raw)
-                        if reading is not None:
-                            with self._lock:
-                                self._latest = reading
-                            logger.debug("Serial reading: %s", reading)
+                logger.info("Opening serial port %s @ %d baud", self._port, self._baudrate)
+                self._ser = serial.Serial(self._port, self._baudrate, timeout=self._timeout)
+                logger.info("Serial port %s opened", self._port)
+
+                while True:
+                    raw_bytes = self._ser.readline()
+                    if not raw_bytes:
+                        continue
+                    raw = raw_bytes.decode("utf-8", errors="replace")
+                    reading = parse_line(raw)
+                    if reading is not None:
+                        with self._lock:
+                            self._latest = reading
+                        logger.debug("Serial reading: %s", reading)
+
             except serial.SerialException as exc:
-                logger.error(
-                    "Serial error on %s: %s. Retrying in %ss...",
-                    self._port,
-                    exc,
-                    self._reconnect_delay,
-                )
+                logger.error("Serial error on %s: %s. Retrying in %ss...", self._port, exc, self._reconnect_delay)
             except OSError as exc:
-                logger.error(
-                    "OS error on %s: %s. Retrying in %ss...",
-                    self._port,
-                    exc,
-                    self._reconnect_delay,
-                )
+                logger.error("OS error on %s: %s. Retrying in %ss...", self._port, exc, self._reconnect_delay)
+            finally:
+
+                if self._ser and self._ser.is_open:
+                    self._ser.close()
+
             time.sleep(self._reconnect_delay)
