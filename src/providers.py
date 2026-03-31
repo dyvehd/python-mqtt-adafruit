@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 import random
 from dataclasses import dataclass
 from typing import Protocol
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -30,6 +33,7 @@ class AIDetection:
 
 class SensorProvider(Protocol):
     def get_readings(self) -> SensorReading: ...
+    def send_command(self, command: str) -> None: ...
 
 
 class AIProvider(Protocol):
@@ -55,6 +59,9 @@ class MockSensorProvider:
             temperature=self._base_temp + offset,
             humidity=self._base_humidity + offset,
         )
+
+    def send_command(self, command: str) -> None:
+        logger.debug("MockSensorProvider ignoring command: %s", command)
 
 
 class MockAIProvider:

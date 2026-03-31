@@ -47,7 +47,8 @@ def parse_line(raw: str) -> SensorReading | None:
 class SerialSensorProvider:
     """Reads sensor data from a Yolo:Bit connected via USB serial.
     A daemon thread continuously reads JSON lines from the serial port and
-    caches the latest valid SensorReading.
+    caches the latest valid SensorReading.  The gateway can also push
+    commands back to the microcontroller via ``send_command()``.
     """
 
     def __init__(
@@ -65,6 +66,9 @@ class SerialSensorProvider:
         self._lock = threading.Lock()
         self._latest: SensorReading | None = None
 
+        self._serial_lock = threading.Lock()
+        self._serial: serial.Serial | None = None
+
         thread = threading.Thread(target=self._reader_loop, daemon=True)
         thread.start()
 
@@ -76,6 +80,19 @@ class SerialSensorProvider:
                 )
             return self._latest
 
+    def send_command(self, command: str) -> None:
+        """Write a single-line command string to the microcontroller."""
+        with self._serial_lock:
+            if self._serial is None or not self._serial.is_open:
+                logger.warning("Serial port not open – cannot send command")
+                return
+            try:
+                self._serial.write((command + "\n").encode("utf-8"))
+                self._serial.flush()
+                logger.debug("Sent command: %s", command)
+            except serial.SerialException as exc:
+                logger.warning("Failed to send command: %s", exc)
+
     def _reader_loop(self) -> None:
         """Continuously read lines from the serial port, reconnecting on failure."""
         while True:
@@ -85,12 +102,16 @@ class SerialSensorProvider:
                     self._port,
                     self._baudrate,
                 )
-                with serial.Serial(
+                ser = serial.Serial(
                     self._port,
                     self._baudrate,
                     timeout=self._timeout,
-                ) as ser:
-                    logger.info("Serial port %s opened", self._port)
+                )
+                with self._serial_lock:
+                    self._serial = ser
+
+                logger.info("Serial port %s opened", self._port)
+                try:
                     while True:
                         raw_bytes = ser.readline()
                         if not raw_bytes:
@@ -101,6 +122,10 @@ class SerialSensorProvider:
                             with self._lock:
                                 self._latest = reading
                             logger.debug("Serial reading: %s", reading)
+                finally:
+                    with self._serial_lock:
+                        self._serial = None
+                    ser.close()
             except serial.SerialException as exc:
                 logger.error(
                     "Serial error on %s: %s. Retrying in %ss...",

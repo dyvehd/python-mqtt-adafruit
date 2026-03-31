@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import sys
 import time
@@ -66,6 +67,10 @@ class Gateway:
 
         detection = self._ai.get_detection()
         alert_level, alarm_reason = evaluate_alert(reading, detection)
+
+        self._sensor.send_command(
+            json.dumps({"alert": str(alert_level)})
+        )
 
         self._client.publish(FeedKey.SENSOR_RESULTS, str(reading))
         self._client.publish(FeedKey.AI_RESULTS, str(detection))
