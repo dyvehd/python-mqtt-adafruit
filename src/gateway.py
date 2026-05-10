@@ -3,18 +3,21 @@ from __future__ import annotations
 import json
 import logging
 import sys
-import time
+import threading
 
 from src.alert import evaluate_alert
 from src.config import PUBLISH_INTERVAL_SEC, SUBSCRIBE_FEEDS, FeedKey
-from src.providers import AIProvider, SensorProvider
+from src.providers import AIProvider, SensorProvider, SensorReading
 
 logger = logging.getLogger(__name__)
 
 
 class Gateway:
     """Orchestrates MQTT communication between data providers and Adafruit IO.
-    Accepts an Adafruit_IO MQTTClient and sensor/AI providers.
+
+    Uses an event-driven main loop: normally publishes batched sensor data
+    every ``publish_interval`` seconds, but wakes up immediately when the
+    AI provider signals an urgent alarm transition.
     """
 
     def __init__(
@@ -29,9 +32,24 @@ class Gateway:
         self._ai = ai_provider
         self._publish_interval = publish_interval
 
+        # Event-driven alarm bypass
+        self._urgent_event = threading.Event()
+
+        # Cache the last known sensor reading for alert evaluation
+        # when the buffer happens to be empty between polls.
+        self._last_reading: SensorReading | None = None
+
+        # Wire MQTT callbacks
         self._client.on_connect = self._on_connect
         self._client.on_disconnect = self._on_disconnect
         self._client.on_message = self._on_message
+
+        # Wire AI alert callback
+        self._ai.set_alert_callback(self._on_ai_alert)
+
+    # ------------------------------------------------------------------
+    #  MQTT callbacks
+    # ------------------------------------------------------------------
 
     def _on_connect(self, client) -> None:
         logger.info("Connected to Adafruit IO. Subscribing to command feeds...")
@@ -45,19 +63,50 @@ class Gateway:
     def _on_message(self, client, feed_key: str, payload: str) -> None:
         logger.info("Received message on %s: %s", feed_key, payload)
 
+    # ------------------------------------------------------------------
+    #  AI alert callback
+    # ------------------------------------------------------------------
+
+    def _on_ai_alert(self) -> None:
+        """Called by the AI provider when alarm state transitions to ALARM.
+
+        Sets the urgent event so the main loop wakes up immediately.
+        """
+        logger.warning("AI alert callback fired — waking gateway for immediate publish")
+        self._urgent_event.set()
+
+    # ------------------------------------------------------------------
+    #  Main loop
+    # ------------------------------------------------------------------
+
     def start(self) -> None:
         self._client.connect()
         self._client.loop_background()
-        logger.info("Gateway started. Publishing every %ss", self._publish_interval)
+        logger.info(
+            "Gateway started. Publishing every %ss (urgent alarms bypass interval)",
+            self._publish_interval,
+        )
 
         while True:
+            woken = self._urgent_event.wait(timeout=self._publish_interval)
+            if woken:
+                logger.warning("Urgent alarm — publishing immediately!")
+                self._urgent_event.clear()
             self.publish_cycle()
-            time.sleep(self._publish_interval)
+
+    # ------------------------------------------------------------------
+    #  Publish cycle
+    # ------------------------------------------------------------------
 
     def publish_cycle(self) -> None:
-        """Run one publish iteration: read providers, evaluate alert, publish."""
+        """Run one publish iteration: read providers, evaluate alert, publish.
+
+        Sensor readings are published as a JSON array so all data points
+        captured since the last cycle are preserved.
+        """
+        # --- Sensor readings (batched) ---
         try:
-            reading = self._sensor.get_readings()
+            readings = self._sensor.get_readings()
         except RuntimeError as exc:
             logger.warning("Sensor unavailable: %s", exc)
             self._client.publish(FeedKey.SENSOR_DEVICE_STATUS, "offline")
@@ -65,22 +114,39 @@ class Gateway:
 
         self._client.publish(FeedKey.SENSOR_DEVICE_STATUS, "online")
 
+        # Pick the reading to use for alert evaluation
+        if readings:
+            self._last_reading = readings[-1]
+
+        reading_for_alert = self._last_reading
+
+        # --- AI detection (smoothed by rolling window) ---
         detection = self._ai.get_detection()
-        alert_level, alarm_reason = evaluate_alert(reading, detection)
 
-        self._sensor.send_command(
-            json.dumps({"alert": str(alert_level)})
+        # --- Alert evaluation ---
+        if reading_for_alert is not None:
+            alert_level, alarm_reason = evaluate_alert(reading_for_alert, detection)
+            self._sensor.send_command(json.dumps({"alert": str(alert_level)}))
+        else:
+            # No sensor data available yet — use detection only
+            from src.alert import AlertLevel, AlarmReason
+
+            if detection.fire:
+                alert_level, alarm_reason = AlertLevel.ALARM, AlarmReason.FIRE
+            else:
+                alert_level, alarm_reason = AlertLevel.NORMAL, AlarmReason.NONE
+
+        # --- Publish ---
+        sensor_payload = json.dumps(
+            [{"temp": r.temperature, "hum": r.humidity} for r in readings]
         )
-
-        self._client.publish(FeedKey.SENSOR_RESULTS, str(reading))
+        self._client.publish(FeedKey.SENSOR_RESULTS, sensor_payload)
         self._client.publish(FeedKey.AI_RESULTS, str(detection))
-        self._client.publish(
-            FeedKey.EVENT_ALERT, f"{alert_level}:{alarm_reason}"
-        )
+        self._client.publish(FeedKey.EVENT_ALERT, f"{alert_level}:{alarm_reason}")
 
         logger.info(
-            "Published | %s | %s | alert=%s reason=%s",
-            reading,
+            "Published | readings=%d | %s | alert=%s reason=%s",
+            len(readings),
             detection,
             alert_level,
             alarm_reason,

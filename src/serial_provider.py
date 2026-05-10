@@ -46,9 +46,13 @@ def parse_line(raw: str) -> SensorReading | None:
 
 class SerialSensorProvider:
     """Reads sensor data from a Yolo:Bit connected via USB serial.
+
     A daemon thread continuously reads JSON lines from the serial port and
-    caches the latest valid SensorReading.  The gateway can also push
-    commands back to the microcontroller via ``send_command()``.
+    buffers all valid SensorReadings.  ``get_readings()`` returns and clears
+    the accumulated buffer (acting as a queue) so no readings are lost.
+
+    The gateway can push commands back to the microcontroller via
+    ``send_command()``.
     """
 
     def __init__(
@@ -64,7 +68,8 @@ class SerialSensorProvider:
         self._reconnect_delay = reconnect_delay
 
         self._lock = threading.Lock()
-        self._latest: SensorReading | None = None
+        self._buffer: list[SensorReading] = []
+        self._ever_received = False
 
         self._serial_lock = threading.Lock()
         self._serial: serial.Serial | None = None
@@ -72,13 +77,20 @@ class SerialSensorProvider:
         thread = threading.Thread(target=self._reader_loop, daemon=True)
         thread.start()
 
-    def get_readings(self) -> SensorReading:
+    def get_readings(self) -> list[SensorReading]:
+        """Return all buffered readings since the last call and clear the buffer.
+
+        Raises ``RuntimeError`` if no data has ever been received from the
+        serial port (i.e. the sensor is not yet online).
+        """
         with self._lock:
-            if self._latest is None:
+            if not self._ever_received:
                 raise RuntimeError(
                     f"No sensor data received yet from serial port {self._port}"
                 )
-            return self._latest
+            readings = list(self._buffer)
+            self._buffer.clear()
+            return readings
 
     def send_command(self, command: str) -> None:
         """Write a single-line command string to the microcontroller."""
@@ -120,7 +132,8 @@ class SerialSensorProvider:
                         reading = parse_line(raw)
                         if reading is not None:
                             with self._lock:
-                                self._latest = reading
+                                self._buffer.append(reading)
+                                self._ever_received = True
                             logger.debug("Serial reading: %s", reading)
                 finally:
                     with self._serial_lock:

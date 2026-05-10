@@ -25,8 +25,19 @@ PUBLISH_INTERVAL_SEC = 10
 WARNING_TEMP_THRESHOLD = 40.0
 ALARM_TEMP_THRESHOLD = 55.0
 
-AI_TARGET_FPS = 150
+AI_TARGET_FPS = 30
 AI_CONFIDENCE_THRESHOLD = 0.5
+
+# AI Pipeline – N-out-of-M rolling window params
+AI_WINDOW_SIZE = 15  # M: total frames in the rolling window
+AI_ALARM_THRESHOLD = 5  # N: consistent-positive frames required to trigger alarm
+
+# AI Pipeline – Bounding box IoU tracking params
+AI_IOU_THRESHOLD = 0.25  # Minimum IoU for spatial consistency
+AI_TRACKING_GAP_RESET = 5  # Consecutive no-detection frames before resetting tracker
+
+# AI Pipeline – Logging
+AI_LOG_FREQUENCY = 15  # Log batch stats every N frames
 
 SERIAL_BAUDRATE = 115200
 SERIAL_TIMEOUT_SEC = 2.0
