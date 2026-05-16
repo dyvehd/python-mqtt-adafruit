@@ -28,15 +28,15 @@ Yolo:Bit + DHT20 + LCD + Fan + Pump + RGB LED
 
 ## Adafruit IO Feed Mapping
 
-| Feed Name                    | MQTT Key                                    | Description                                         | Direction        |
-| ---------------------------- | ------------------------------------------- | --------------------------------------------------- | ---------------- |
-| `sensor/results`             | `sfs-mqtt.sensor-slash-results`             | Temperature and humidity readings                   | Gateway -> Cloud |
-| `sensor/device-status`       | `sfs-mqtt.sensor-slash-device-status`       | Online/offline health check for the microcontroller | Gateway -> Cloud |
-| `ai/results`                 | `sfs-mqtt.ai-slash-results`                 | YOLO fire/smoke detection with confidence scores    | Gateway -> Cloud |
-| `event/alert-level-alarm-reason` | `sfs-mqtt.event-slash-alert-level-alarm-reason` | Combined `LEVEL:REASON` (e.g. `ALARM:FIRE`)     | Gateway -> Cloud |
-| `cmd/system`                 | `sfs-mqtt.cmd-slash-system`                 | Master switch (`on`/`off`)                          | Cloud -> Gateway |
-| `cmd/fan-pump`               | `sfs-mqtt.cmd-slash-fan-pump`               | Fan/pump control (`on`/`off`/`auto`)                | Cloud -> Gateway |
-| `cmd/test-run`               | `sfs-mqtt.cmd-slash-test-run`               | Fire drill trigger (`on`/`off`)                     | Cloud -> Gateway |
+| Feed Name                        | MQTT Key                                        | Description                                         | Direction        |
+| -------------------------------- | ----------------------------------------------- | --------------------------------------------------- | ---------------- |
+| `sensor/results`                 | `sfs-mqtt.sensor-slash-results`                 | Temperature and humidity readings                   | Gateway -> Cloud |
+| `sensor/device-status`           | `sfs-mqtt.sensor-slash-device-status`           | Online/offline health check for the microcontroller | Gateway -> Cloud |
+| `ai/results`                     | `sfs-mqtt.ai-slash-results`                     | YOLO fire/smoke detection with confidence scores    | Gateway -> Cloud |
+| `event/alert-level-alarm-reason` | `sfs-mqtt.event-slash-alert-level-alarm-reason` | Combined `LEVEL:REASON` (e.g. `ALARM:FIRE`)         | Gateway -> Cloud |
+| `cmd/system`                     | `sfs-mqtt.cmd-slash-system`                     | Master switch (`on`/`off`)                          | Cloud -> Gateway |
+| `cmd/fan-pump`                   | `sfs-mqtt.cmd-slash-fan-pump`                   | Fan/pump control (`on`/`off`/`auto`)                | Cloud -> Gateway |
+| `cmd/test-run`                   | `sfs-mqtt.cmd-slash-test-run`                   | Fire drill trigger (`on`/`off`)                     | Cloud -> Gateway |
 
 ## Project Structure
 
@@ -112,13 +112,13 @@ The gateway will connect to Adafruit IO, subscribe to command feeds, and begin p
 
 ## Progress
 
-| Task                                                       | Status                              |
-| ---------------------------------------------------------- | ----------------------------------- |
-| MQTT communication with Adafruit IO                        | Done                                |
-| Modular gateway architecture (provider protocols)          | Done                                |
-| Multi-level alert evaluation                               | Done (needs better series analysis) |
-| Serial sensor reading from Yolo:Bit                        | Done                                |
-| Mock providers for development without hardware            | Done                                |
-| Integrate YOLO model for AI fire/smoke detection           | Done                                |
-| Forward control commands to microcontroller (serial write) | Not started                         |
-| Persistent event logging                                   | Not started                         |
+| Task                                                       | Status                           |
+| ---------------------------------------------------------- | -------------------------------- |
+| MQTT communication with Adafruit IO                        | Done                             |
+| Modular gateway architecture (provider protocols)          | Done                             |
+| Multi-level alert evaluation                               | Done                             |
+| Serial sensor reading from Yolo:Bit                        | Done (with data batching)        |
+| Mock providers for development without hardware            | Done                             |
+| Integrate YOLO model for AI fire/smoke detection           | Done (Robust IoU/Rolling window) |
+| Forward control commands to microcontroller (serial write) | Started, needs improvements      |
+| Persistent event logging                                   | Not started                      |

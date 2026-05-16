@@ -17,3 +17,13 @@ _reference
 
 # Test cache
 .pytest_cache/
+
+# Local toolings
+.specstory
+.cursor
+.cursorindexingignore
+.vscode
+.ignore
+
+# workspace files
+*.code-workspace
