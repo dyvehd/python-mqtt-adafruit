@@ -15,8 +15,14 @@ logger = logging.getLogger(__name__)
 
 def parse_line(raw: str) -> SensorReading | None:
     """Parse a JSON line from the microcontroller into a SensorReading.
-    Expected format: ``{"temp": 25.3, "hum": 60.1}``
-    Returns None for error objects, malformed JSON, or missing keys.
+
+    Accepts both the new typed format and the legacy format:
+
+    - New:    ``{"type": "telemetry", "temp": 25.3, "hum": 60.1}``
+    - Legacy: ``{"temp": 25.3, "hum": 60.1}``
+
+    Returns None for error objects, non-telemetry types, malformed JSON,
+    or missing keys.
     """
     raw = raw.strip()
     if not raw:
@@ -32,6 +38,12 @@ def parse_line(raw: str) -> SensorReading | None:
 
     if "error" in data:
         logger.warning("Microcontroller error: %s", data["error"])
+        return None
+
+    # Skip non-telemetry message types (future-proof for acks, status, etc.)
+    msg_type = data.get("type")
+    if msg_type is not None and msg_type != "telemetry":
+        logger.debug("Ignoring non-telemetry message type: %s", msg_type)
         return None
 
     try:

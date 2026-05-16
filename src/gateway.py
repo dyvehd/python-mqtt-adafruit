@@ -6,7 +6,7 @@ import sys
 import threading
 
 from src.alert import evaluate_alert
-from src.config import PUBLISH_INTERVAL_SEC, SUBSCRIBE_FEEDS, FeedKey
+from src.config import FEED_TO_COMMAND, PUBLISH_INTERVAL_SEC, SUBSCRIBE_FEEDS, FeedKey
 from src.providers import AIProvider, SensorProvider, SensorReading
 
 logger = logging.getLogger(__name__)
@@ -62,6 +62,47 @@ class Gateway:
 
     def _on_message(self, client, feed_key: str, payload: str) -> None:
         logger.info("Received message on %s: %s", feed_key, payload)
+        self._forward_command(feed_key, payload)
+
+    def _forward_command(self, feed_key: str, payload: str) -> None:
+        """Translate an Adafruit IO message into the standardized command
+        schema and forward it to the microcontroller via serial.
+        """
+        payload = payload.strip()
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            # Fallback for plain strings if the dashboard sends raw text
+            data = payload.lower()
+
+        # --- Simple 1:1 feeds ---
+        if feed_key in FEED_TO_COMMAND:
+            cmd_name = FEED_TO_COMMAND[feed_key]
+            if isinstance(data, dict):
+                val = str(data.get("action", "")).lower()
+            else:
+                val = str(data).lower()
+                
+            if val:
+                cmd = json.dumps({"cmd": cmd_name, "val": val})
+                self._sensor.send_command(cmd)
+            return
+
+        # --- Fan/pump feed: expects JSON like {"fan": "on", "pump": "off"} ---
+        if feed_key == FeedKey.CMD_FAN_PUMP:
+            if isinstance(data, dict):
+                for actuator, value in data.items():
+                    actuator = actuator.lower()
+                    if actuator in ("fan", "pump"):
+                        cmd = json.dumps({"cmd": actuator, "val": str(value).lower()})
+                        self._sensor.send_command(cmd)
+                    else:
+                        logger.warning("Unknown actuator in fan-pump payload: %r", actuator)
+            else:
+                logger.warning(
+                    "Unexpected fan-pump payload format (expected JSON dict): %r",
+                    payload,
+                )
 
     # ------------------------------------------------------------------
     #  AI alert callback
@@ -126,7 +167,9 @@ class Gateway:
         # --- Alert evaluation ---
         if reading_for_alert is not None:
             alert_level, alarm_reason = evaluate_alert(reading_for_alert, detection)
-            self._sensor.send_command(json.dumps({"alert": str(alert_level)}))
+            self._sensor.send_command(
+                json.dumps({"cmd": "alert", "val": str(alert_level)})
+            )
         else:
             # No sensor data available yet — use detection only
             from src.alert import AlertLevel, AlarmReason

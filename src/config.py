@@ -20,6 +20,13 @@ SUBSCRIBE_FEEDS = [
     FeedKey.CMD_TEST_RUN,
 ]
 
+# Maps Adafruit IO feed keys to the command name sent to the microcontroller.
+# CMD_FAN_PUMP is handled specially in the gateway (single feed → two commands).
+FEED_TO_COMMAND: dict[str, str] = {
+    FeedKey.CMD_SYSTEM: "system",
+    FeedKey.CMD_TEST_RUN: "test",
+}
+
 PUBLISH_INTERVAL_SEC = 10
 
 WARNING_TEMP_THRESHOLD = 40.0

@@ -112,13 +112,16 @@ The gateway will connect to Adafruit IO, subscribe to command feeds, and begin p
 
 ## Progress
 
-| Task                                                       | Status                           |
-| ---------------------------------------------------------- | -------------------------------- |
-| MQTT communication with Adafruit IO                        | Done                             |
-| Modular gateway architecture (provider protocols)          | Done                             |
-| Multi-level alert evaluation                               | Done                             |
-| Serial sensor reading from Yolo:Bit                        | Done (with data batching)        |
-| Mock providers for development without hardware            | Done                             |
-| Integrate YOLO model for AI fire/smoke detection           | Done (Robust IoU/Rolling window) |
-| Forward control commands to microcontroller (serial write) | Started, needs improvements      |
-| Persistent event logging                                   | Not started                      |
+| Task                                                       | Status                              |
+| ---------------------------------------------------------- | ----------------------------------- |
+| MQTT communication with Adafruit IO                        | Done                                |
+| Modular gateway architecture (provider protocols)          | Done                                |
+| Multi-level alert evaluation                               | Done                                |
+| Serial sensor reading from Yolo:Bit                        | Done (with data batching)           |
+| Mock providers for development without hardware            | Done                                |
+| Integrate YOLO model for AI fire/smoke detection           | Done (Robust IoU/Rolling window)    |
+| Formalized serial command protocol (Phase 1)               | Done                                |
+| Forward cloud commands to microcontroller (Phase 1)        | Done                                |
+| Microcontroller hardware abstraction layer (Phase 2)       | Done (needs hardware verification)  |
+| Unified microcontroller main.py (Phase 3)                  | Not started                         |
+| Persistent event logging                                   | Not started                         |
