@@ -123,5 +123,6 @@ The gateway will connect to Adafruit IO, subscribe to command feeds, and begin p
 | Formalized serial command protocol (Phase 1)               | Done                                |
 | Forward cloud commands to microcontroller (Phase 1)        | Done                                |
 | Microcontroller hardware abstraction layer (Phase 2)       | Done (needs hardware verification)  |
-| Unified microcontroller main.py (Phase 3)                  | Not started                         |
+| Unified microcontroller main.py (Phase 3)                  | Done (needs hardware verification)  |
+| Missing features: pump, system switch, fire drill (Phase 4)| Done (needs hardware verification)  |
 | Persistent event logging                                   | Not started                         |
