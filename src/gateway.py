@@ -4,10 +4,18 @@ import json
 import logging
 import sys
 import threading
+import time
 
 from src.alert import evaluate_alert
-from src.config import FEED_TO_COMMAND, PUBLISH_INTERVAL_SEC, SUBSCRIBE_FEEDS, FeedKey
-from src.providers import AIProvider, SensorProvider, SensorReading
+from src.config import (
+    ALARM_CLEAR_DELAY_SEC,
+    AUTO_CLEAR_ALARM,
+    FEED_TO_COMMAND,
+    PUBLISH_INTERVAL_SEC,
+    SUBSCRIBE_FEEDS,
+    FeedKey,
+)
+from src.providers import AIDetection, AIProvider, SensorProvider, SensorReading
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +47,14 @@ class Gateway:
         # when the buffer happens to be empty between polls.
         self._last_reading: SensorReading | None = None
 
+        # Fire alarm state machine variables
+        self._fire_alarm_active = False
+        self._last_fire_time = 0.0
+
+        # Configuration options
+        self._auto_clear_alarm = AUTO_CLEAR_ALARM
+        self._alarm_clear_delay = ALARM_CLEAR_DELAY_SEC
+
         # Wire MQTT callbacks
         self._client.on_connect = self._on_connect
         self._client.on_disconnect = self._on_disconnect
@@ -46,6 +62,13 @@ class Gateway:
 
         # Wire AI alert callback
         self._ai.set_alert_callback(self._on_ai_alert)
+
+    def reset_fire_alarm(self) -> None:
+        """Reset the latched fire alarm state and timestamp."""
+        if self._fire_alarm_active:
+            logger.info("Resetting fire alarm active state to NORMAL")
+        self._fire_alarm_active = False
+        self._last_fire_time = 0.0
 
     # ------------------------------------------------------------------
     #  MQTT callbacks
@@ -86,6 +109,14 @@ class Gateway:
             if val:
                 cmd = json.dumps({"cmd": cmd_name, "val": val})
                 self._sensor.send_command(cmd)
+
+                # Reset latched fire alarm when system is turned off or fire drill ends
+                if cmd_name == "system" and val == "off":
+                    logger.info("System turned OFF - resetting fire alarm state")
+                    self.reset_fire_alarm()
+                elif cmd_name == "test-run" and val == "off":
+                    logger.info("Fire drill ended - resetting fire alarm state")
+                    self.reset_fire_alarm()
             return
 
         # --- Fan/pump feed: expects JSON like {"fan": "on", "pump": "off"} ---
@@ -162,7 +193,42 @@ class Gateway:
         reading_for_alert = self._last_reading
 
         # --- AI detection (smoothed by rolling window) ---
-        detection = self._ai.get_detection()
+        raw_detection = self._ai.get_detection()
+
+        # Update fire alarm latching/clearing state machine
+        current_time = time.time()
+        if raw_detection.fire:
+            if not self._fire_alarm_active:
+                logger.warning("Fire alarm state activated in Gateway!")
+            self._fire_alarm_active = True
+            self._last_fire_time = current_time
+        else:
+            if self._fire_alarm_active:
+                if self._auto_clear_alarm:
+                    elapsed = current_time - self._last_fire_time
+                    if elapsed >= self._alarm_clear_delay:
+                        logger.warning(
+                            "Fire alarm state automatically cleared after %.1f seconds of no fire",
+                            elapsed,
+                        )
+                        self._fire_alarm_active = False
+                    else:
+                        logger.info(
+                            "Fire alarm active, waiting for auto-clear delay (elapsed: %.1f/%.1f s)",
+                            elapsed,
+                            self._alarm_clear_delay,
+                        )
+                else:
+                    # Latched indefinitely until manual reset
+                    pass
+
+        # Create the effective detection representing the gateway's alarm state
+        detection = AIDetection(
+            fire=self._fire_alarm_active,
+            fire_confidence=raw_detection.fire_confidence,
+            smoke=raw_detection.smoke,
+            smoke_confidence=raw_detection.smoke_confidence,
+        )
 
         # --- Alert evaluation ---
         if reading_for_alert is not None:

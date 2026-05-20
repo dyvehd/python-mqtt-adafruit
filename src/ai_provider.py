@@ -292,7 +292,7 @@ class YoloAIProvider:
         else:
             lines.append("  IoU Consistency: N/A (no boxes)")
 
-        logger.info("\n".join(lines))
+        # logger.info("\n".join(lines))
 
     # ------------------------------------------------------------------
     #  Overlay drawing

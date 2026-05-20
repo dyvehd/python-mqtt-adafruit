@@ -9,7 +9,7 @@ from src.gateway import Gateway
 from src.providers import MockAIProvider, MockSensorProvider
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 
@@ -29,7 +29,7 @@ def main() -> None:
         metavar="ID",
         default="mock",
         help="Camera ID (e.g., 0 for default, 1 for external USB). Uses Mock AI if 'mock' is specified.",
-    ) 
+    )
 
     parser.add_argument(
         "--model",
@@ -50,13 +50,14 @@ def main() -> None:
         ai_provider = MockAIProvider()
     else:
         from src.ai_provider import YoloAIProvider
+
         try:
             cam_id = int(args.camera_id)
             ai_provider = YoloAIProvider(model_path=args.model, camera_id=cam_id)
         except ValueError:
             logger.error("Error: --camera-id must be an integer (e.g. 0, 1) or 'mock'.")
             sys.exit(1)
-    
+
     try:
         username, key = load_credentials()
         client = MQTTClient(username, key)

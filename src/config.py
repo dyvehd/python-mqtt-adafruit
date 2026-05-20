@@ -24,7 +24,7 @@ SUBSCRIBE_FEEDS = [
 # CMD_FAN_PUMP is handled specially in the gateway (single feed → two commands).
 FEED_TO_COMMAND: dict[str, str] = {
     FeedKey.CMD_SYSTEM: "system",
-    FeedKey.CMD_TEST_RUN: "test",
+    FeedKey.CMD_TEST_RUN: "test-run",
 }
 
 PUBLISH_INTERVAL_SEC = 10
@@ -45,6 +45,13 @@ AI_TRACKING_GAP_RESET = 5  # Consecutive no-detection frames before resetting tr
 
 # AI Pipeline – Logging
 AI_LOG_FREQUENCY = 15  # Log batch stats every N frames
+
+# Alarm Auto-Clear / Latching params
+AUTO_CLEAR_ALARM = True  # If True, alarm turns off automatically if no fire is detected for ALARM_CLEAR_DELAY_SEC
+ALARM_CLEAR_DELAY_SEC = (
+    9.0  # Required seconds of continuous no-fire before clearing alarm
+)
+
 
 SERIAL_BAUDRATE = 115200
 SERIAL_TIMEOUT_SEC = 2.0
