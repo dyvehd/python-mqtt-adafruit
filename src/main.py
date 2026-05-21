@@ -37,6 +37,13 @@ def main() -> None:
         help="Path to the YOLO model weights.",
     )
 
+    parser.add_argument(
+        "--stream-port",
+        type=int,
+        default=8080,
+        help="Port to serve the MJPEG live video stream (default: 8080).",
+    )
+
     args = parser.parse_args()
 
     if args.serial:
@@ -57,6 +64,11 @@ def main() -> None:
         except ValueError:
             logger.error("Error: --camera-id must be an integer (e.g. 0, 1) or 'mock'.")
             sys.exit(1)
+
+    # Initialize and start the live MJPEG streaming server
+    from src.stream_server import MJPEGStreamServer
+    stream_server = MJPEGStreamServer(ai_provider=ai_provider, port=args.stream_port)
+    stream_server.start()
 
     try:
         username, key = load_credentials()

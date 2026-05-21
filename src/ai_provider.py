@@ -84,8 +84,9 @@ class YoloAIProvider:
         self._frame_counter = 0
         self._log_frequency = log_frequency
 
-        # --- Thread-safe detection cache ---
+        # --- Thread-safe detection & frame cache ---
         self._lock = threading.Lock()
+        self._latest_jpeg_frame: bytes | None = None
         self._latest = AIDetection(
             fire=False,
             fire_confidence=0.0,
@@ -140,6 +141,11 @@ class YoloAIProvider:
         """Return the latest smoothed detection (thread-safe)."""
         with self._lock:
             return self._latest
+
+    def get_latest_jpeg(self) -> bytes | None:
+        """Return the latest annotated JPEG frame bytes (thread-safe)."""
+        with self._lock:
+            return self._latest_jpeg_frame
 
     def set_alert_callback(self, callback: Callable[[], None]) -> None:
         """Register a callback invoked on safe → alarm transitions."""
@@ -488,6 +494,12 @@ class YoloAIProvider:
 
                 # --- Draw overlay ---
                 self._draw_overlay(frame, detections, camera_fps, inference_fps)
+
+                # --- Cache latest JPEG frame ---
+                ret_enc, jpeg_buf = cv2.imencode(".jpg", frame)
+                if ret_enc:
+                    with self._lock:
+                        self._latest_jpeg_frame = jpeg_buf.tobytes()
 
                 # --- Batch logging ---
                 self._frame_counter += 1
