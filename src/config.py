@@ -37,7 +37,7 @@ AI_CONFIDENCE_THRESHOLD = 0.5
 
 # AI Pipeline – N-out-of-M rolling window params
 AI_WINDOW_SIZE = 15  # M: total frames in the rolling window
-AI_ALARM_THRESHOLD = 5  # N: consistent-positive frames required to trigger alarm
+AI_ALARM_THRESHOLD = 10  # N: consistent-positive frames required to trigger alarm
 
 # AI Pipeline – Bounding box IoU tracking params
 AI_IOU_THRESHOLD = 0.25  # Minimum IoU for spatial consistency
@@ -51,6 +51,10 @@ AUTO_CLEAR_ALARM = True  # If True, alarm turns off automatically if no fire is 
 ALARM_CLEAR_DELAY_SEC = (
     9.0  # Required seconds of continuous no-fire before clearing alarm
 )
+
+# Audio Siren Configuration
+PLAY_ALARM_SOUND = False  # If True, gateway loops custom siren WAV when alarm is active
+ALARM_SOUND_PATH = "siren.wav"  # Path to custom WAV file (e.g. root or assets)
 
 
 SERIAL_BAUDRATE = 115200

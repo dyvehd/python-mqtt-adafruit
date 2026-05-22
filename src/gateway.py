@@ -14,6 +14,8 @@ from src.config import (
     PUBLISH_INTERVAL_SEC,
     SUBSCRIBE_FEEDS,
     FeedKey,
+    PLAY_ALARM_SOUND,
+    ALARM_SOUND_PATH,
 )
 from src.providers import AIDetection, AIProvider, SensorProvider, SensorReading
 
@@ -54,6 +56,9 @@ class Gateway:
         # Configuration options
         self._auto_clear_alarm = AUTO_CLEAR_ALARM
         self._alarm_clear_delay = ALARM_CLEAR_DELAY_SEC
+        
+        # Audio alert state tracking
+        self._last_evaluated_alert_level = None
 
         # Wire MQTT callbacks
         self._client.on_connect = self._on_connect
@@ -248,6 +253,11 @@ class Gateway:
             else:
                 alert_level, alarm_reason = AlertLevel.NORMAL, AlarmReason.NONE
 
+        # Local audio alarm sound transitions
+        if alert_level != self._last_evaluated_alert_level:
+            self._update_alarm_sound(alert_level)
+            self._last_evaluated_alert_level = alert_level
+
         # --- Publish ---
         sensor_payload = json.dumps(
             [{"temp": r.temperature, "hum": r.humidity} for r in readings]
@@ -263,3 +273,43 @@ class Gateway:
             alert_level,
             alarm_reason,
         )
+
+    def _update_alarm_sound(self, alert_level) -> None:
+        """Play or stop the audio siren based on the active alert level."""
+        from src.alert import AlertLevel
+
+        if not PLAY_ALARM_SOUND:
+            return
+
+        if sys.platform != "win32":
+            logger.warning("Audio alarms are only supported on Windows systems.")
+            return
+
+        if alert_level == AlertLevel.ALARM:
+            import os
+            try:
+                import winsound
+                # Try finding sound file at root or config path
+                sound_path = ALARM_SOUND_PATH
+                if os.path.exists(sound_path):
+                    logger.warning("Playing custom alarm siren loop: %s", sound_path)
+                    winsound.PlaySound(
+                        sound_path,
+                        winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_LOOP,
+                    )
+                else:
+                    logger.warning(
+                        "Alarm sound file '%s' not found. Falling back to default Windows system beep.",
+                        sound_path,
+                    )
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+            except Exception as e:
+                logger.error("Failed to play alarm siren sound: %s", e)
+        else:
+            # Reverting from ALARM level, silence any loop
+            try:
+                import winsound
+                winsound.PlaySound(None, winsound.SND_PURGE)
+                logger.info("Alarm cleared — silenced local siren.")
+            except Exception as e:
+                logger.error("Failed to silence alarm siren: %s", e)
