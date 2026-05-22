@@ -5,7 +5,7 @@ import dotenv
 
 class FeedKey(StrEnum):
     AI_RESULTS = "sfs-mqtt.ai-slash-results"
-    CMD_FAN_PUMP = "sfs-mqtt.cmd-slash-fan-pump"
+    CMD_ACTUATOR = "sfs-mqtt.cmd-slash-actuator"
     CMD_SYSTEM = "sfs-mqtt.cmd-slash-system"
     CMD_TEST_RUN = "sfs-mqtt.cmd-slash-test-run"
     EVENT_ALERT = "sfs-mqtt.event-slash-alert-level-alarm-reason"
@@ -16,12 +16,12 @@ class FeedKey(StrEnum):
 
 SUBSCRIBE_FEEDS = [
     FeedKey.CMD_SYSTEM,
-    FeedKey.CMD_FAN_PUMP,
+    FeedKey.CMD_ACTUATOR,
     FeedKey.CMD_TEST_RUN,
 ]
 
 # Maps Adafruit IO feed keys to the command name sent to the microcontroller.
-# CMD_FAN_PUMP is handled specially in the gateway (single feed → two commands).
+# CMD_ACTUATOR is handled specially in the gateway (single feed → three commands).
 FEED_TO_COMMAND: dict[str, str] = {
     FeedKey.CMD_SYSTEM: "system",
     FeedKey.CMD_TEST_RUN: "test-run",

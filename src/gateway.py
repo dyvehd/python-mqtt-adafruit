@@ -119,19 +119,22 @@ class Gateway:
                     self.reset_fire_alarm()
             return
 
-        # --- Fan/pump feed: expects JSON like {"fan": "on", "pump": "off"} ---
-        if feed_key == FeedKey.CMD_FAN_PUMP:
+        # --- Actuator feed: expects JSON like {"fan": "on", "pump": "off", "light": "#ff0000"} ---
+        if feed_key == FeedKey.CMD_ACTUATOR:
             if isinstance(data, dict):
                 for actuator, value in data.items():
                     actuator = actuator.lower()
                     if actuator in ("fan", "pump"):
                         cmd = json.dumps({"cmd": actuator, "val": str(value).lower()})
                         self._sensor.send_command(cmd)
+                    elif actuator == "light":
+                        cmd = json.dumps({"cmd": actuator, "val": str(value)})
+                        self._sensor.send_command(cmd)
                     else:
-                        logger.warning("Unknown actuator in fan-pump payload: %r", actuator)
+                        logger.warning("Unknown actuator in actuator payload: %r", actuator)
             else:
                 logger.warning(
-                    "Unexpected fan-pump payload format (expected JSON dict): %r",
+                    "Unexpected actuator payload format (expected JSON dict): %r",
                     payload,
                 )
 
