@@ -39,7 +39,7 @@ Yolo:Bit + DHT20 + Actuators (Fan, Pump)
 | `ai/results`                     | `sfs-mqtt.ai-slash-results`                     | YOLO fire/smoke detection with confidence scores    | Gateway -> Cloud |
 | `event/alert-level-alarm-reason` | `sfs-mqtt.event-slash-alert-level-alarm-reason` | Combined `LEVEL:REASON` (e.g. `ALARM:FIRE`)         | Gateway -> Cloud |
 | `cmd/system`                     | `sfs-mqtt.cmd-slash-system`                     | Master switch (`on`/`off`)                          | Cloud -> Gateway |
-| `cmd/fan-pump`                   | `sfs-mqtt.cmd-slash-fan-pump`                   | Fan/pump control (`on`/`off`/`auto`)                | Cloud -> Gateway |
+| `cmd/actuator`                   | `sfs-mqtt.cmd-slash-actuator`                   | Fan, pump, and manual LED color control commands    | Cloud -> Gateway |
 | `cmd/test-run`                   | `sfs-mqtt.cmd-slash-test-run`                   | Fire drill trigger (`on`/`off`)                     | Cloud -> Gateway |
 
 ---
